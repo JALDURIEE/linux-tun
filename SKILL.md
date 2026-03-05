@@ -145,6 +145,14 @@ sudo systemctl restart mihomo
 
 ### 1. 下载新配置
 
+如果你发现因为订阅过期导致无法联网（TUN 模式依然接管了流量），请先停止 `mihomo` 服务以恢复直接联网：
+
+```bash
+sudo systemctl stop mihomo
+```
+
+然后执行以下操作：
+
 ```bash
 cd /etc/mihomo
 # 备份旧配置
