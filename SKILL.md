@@ -139,6 +139,58 @@ sudo systemctl restart mihomo
 
 ---
 
+## 更新机场订阅
+
+当机场订阅地址变更或需要更新节点时，请按照以下步骤操作：
+
+### 1. 下载新配置
+
+```bash
+cd /etc/mihomo
+# 备份旧配置
+sudo cp config.yaml config.yaml.bak
+# 下载新配置 (替换 {新的订阅地址URL编码})
+sudo curl -o config.yaml "https://api.wcc.best/sub?target=clash&url={新的订阅地址URL编码}&insert=false&emoji=true"
+```
+
+### 2. 重新应用 TUN 和 Web UI 配置
+
+由于下载的是原始订阅文件，需要重新将 TUN、DNS 以及 Web UI 配置添加到 `config.yaml` 中。
+
+```bash
+sudo vim /etc/mihomo/config.yaml
+```
+
+确保包含以下内容（或直接从备份中复制相关部分）：
+
+```yaml
+external-controller: :9090
+external-ui: ui
+secret: '你的密码'
+
+tun:
+  enable: true
+  stack: system
+  dns-hijack:
+    - any:53
+  auto-route: true
+  auto-detect-interface: true
+
+dns:
+  enable: true
+  enhanced-mode: fake-ip
+  # ... 其他 DNS 配置
+```
+
+### 3. 重启服务使配置生效
+
+```bash
+sudo systemctl restart mihomo
+sudo systemctl status mihomo
+```
+
+---
+
 ## 常用命令
 
 - 启动: `sudo systemctl start mihomo`
@@ -146,4 +198,4 @@ sudo systemctl restart mihomo
 - 重启: `sudo systemctl restart mihomo`
 - 状态: `sudo systemctl status mihomo`
 - 查看日志: `sudo journalctl -u mihomo -f`
-- 更新订阅: 重新执行 curl 下载命令
+- 更新订阅: 参考上方的 [更新机场订阅](#更新机场订阅) 部分
