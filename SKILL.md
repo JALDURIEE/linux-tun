@@ -141,41 +141,42 @@ sudo systemctl restart mihomo
 
 ## 更新机场订阅
 
-当机场订阅地址变更或需要更新节点时，请按照以下步骤操作：
+当机场订阅地址变更或需要更新节点时，**必须**严格按照以下流程操作。
 
-### 1. 下载新配置
+> [!IMPORTANT]
+> **警告**：直接执行 `curl` 下载新配置会**彻底覆盖**现有的 `config.yaml`。
+> 你**必须**先备份旧配置，并在下载后**手动恢复** TUN、DNS 和 Web UI 相关配置，否则服务将无法正常工作。
 
-如果你发现因为订阅过期导致无法联网（TUN 模式依然接管了流量），请先停止 `mihomo` 服务以恢复直接联网：
+### 第一步：准备工作 (备份与停服)
 
+1. 进入目录并**备份**当前可用的配置：
+   ```bash
+   cd /etc/mihomo
+   sudo cp config.yaml config.yaml.bak
+   ```
+2. 如果当前订阅已过期导致无法联网，请**必须先停止**服务以恢复直接联网：
+   ```bash
+   sudo systemctl stop mihomo
+   ```
+
+### 第二步：下载新配置
+
+使用新的订阅地址下载（替换 `{新的订阅地址URL编码}`）：
 ```bash
-sudo systemctl stop mihomo
-```
-
-然后执行以下操作：
-
-```bash
-cd /etc/mihomo
-# 备份旧配置
-sudo cp config.yaml config.yaml.bak
-# 下载新配置 (替换 {新的订阅地址URL编码})
 sudo curl -o config.yaml "https://api.wcc.best/sub?target=clash&url={新的订阅地址URL编码}&insert=false&emoji=true"
 ```
 
-### 2. 重新应用 TUN 和 Web UI 配置
+### 第三步：恢复关键配置 (强制执行)
 
-由于下载的是原始订阅文件，需要重新将 TUN、DNS 以及 Web UI 配置添加到 `config.yaml` 中。
-
-```bash
-sudo vim /etc/mihomo/config.yaml
-```
-
-确保包含以下内容（或直接从备份中复制相关部分）：
+下载的文件仅包含节点信息，你**必须**将以下内容重新添加回 `config.yaml` 的顶部：
 
 ```yaml
+# 1. 基础与 Web UI 配置
 external-controller: :9090
 external-ui: ui
 secret: '你的密码'
 
+# 2. TUN 模式配置
 tun:
   enable: true
   stack: system
@@ -184,10 +185,21 @@ tun:
   auto-route: true
   auto-detect-interface: true
 
+# 3. DNS 配置
 dns:
   enable: true
   enhanced-mode: fake-ip
-  # ... 其他 DNS 配置
+  listen: 0.0.0.0:1053
+  nameserver:
+    - 114.114.114.114
+    - 223.5.5.5
+```
+
+### 第四步：重启并验证
+
+```bash
+sudo systemctl restart mihomo
+sudo systemctl status mihomo
 ```
 
 ### 3. 重启服务使配置生效
